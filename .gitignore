@@ -1,5 +1,42 @@
-venv/
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Django stuff
+*.log
+*.pot
 *.pyc
 *.sqlite3
+db.sqlite3
+
+# Media / Static (falls generiert)
+media/
+staticfiles/
+
+# IDEs / Editor configs
+.vscode/
+.idea/
+*.swp
+
+# Environment files
 .env
+.env.local
+.env.*.local
+
+# pytest / coverage
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
