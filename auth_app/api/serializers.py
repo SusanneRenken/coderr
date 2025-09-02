@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from auth_app.models import Profile
 
+
 class RegistrationSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True)
@@ -24,12 +25,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
             attrs["email"] = attrs["email"].strip().lower()
 
         if attrs.get("password") != attrs.get("repeated_password"):
-            raise serializers.ValidationError({"repeated_password": "Passwords do not match."})
+            raise serializers.ValidationError(
+                {"repeated_password": "Passwords do not match."})
 
         email = attrs.get("email")
         if email and User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError({"email": "Email already exists."})
-        
+            raise serializers.ValidationError(
+                {"email": "Email already exists."})
+
         return attrs
 
     def create(self, validated_data):

@@ -9,4 +9,5 @@ class Profile(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='customer')
+    type = models.CharField(
+        max_length=10, choices=TYPE_CHOICES, default='customer')

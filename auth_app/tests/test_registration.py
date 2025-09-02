@@ -21,7 +21,8 @@ class RegistrationHappyPathTests(APITestCase):
         self.assertEqual(response.data['username'], 'testuser')
         self.assertEqual(response.data['email'], 'testuser@example.com')
         self.assertEqual(User.objects.count(), 1)
-        self.assertEqual(Profile.objects.filter(user__username="testuser").count(), 1)
+        self.assertEqual(Profile.objects.filter(
+            user__username="testuser").count(), 1)
         self.assertIn("token", response.data)
         self.assertIn("user_id", response.data)
         self.assertTrue(response.data["token"])
@@ -178,7 +179,6 @@ class RegistrationValidationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("email", response.data)
 
-
     def test_duplicate_username(self):
         url = reverse('registration')
         data = {
@@ -221,4 +221,3 @@ class RegistrationValidationTests(APITestCase):
 
         self.assertEqual(User.objects.count(), users_before)
         self.assertEqual(Profile.objects.count(), profiles_before)
-        

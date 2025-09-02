@@ -2,12 +2,16 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from auth_app.models import Profile
-from .serializers import RegistrationSerializer
 from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.throttling import ScopedRateThrottle
+from .serializers import RegistrationSerializer
+
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_registration"
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
@@ -28,6 +32,22 @@ class RegistrationView(APIView):
         )
 
 
+class LoginView(ObtainAuthToken):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_login"
 
-class LoginView(APIView):
-    pass
+    def post(self, request):
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'username': user.username,
+            'email': user.email,
+            'user_id': user.id
+        })
