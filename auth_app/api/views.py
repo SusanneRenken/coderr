@@ -7,6 +7,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.throttling import ScopedRateThrottle
 from auth_app.models import Profile
 from .serializers import RegistrationSerializer, ProfileSerializer
+from .permissions import IsOwnerProfile
 
 
 class RegistrationView(APIView):
@@ -57,6 +58,7 @@ class LoginView(ObtainAuthToken):
 class ProfileDetailView(generics.RetrieveUpdateAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
+    permission_classes = [IsOwnerProfile]
     http_method_names = ["get","patch","head","options"]
 
 

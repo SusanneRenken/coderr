@@ -52,11 +52,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
+
     first_name = serializers.CharField(
         source='user.first_name', allow_blank=True, required=False)
     last_name = serializers.CharField(
         source='user.last_name', allow_blank=True, required=False)
-    email = serializers.EmailField(source='user.email', read_only=True)
+    email = serializers.EmailField(source='user.email', required=False)
 
     class Meta:
         model = Profile
@@ -79,5 +80,24 @@ class ProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         return {key: ("" if value is None else value) for key, value in data.items()}
-
     
+    def validate_email(self, value):
+        if not value:
+            return value
+        exists = User.objects.filter(email__iexact=value).exclude(pk=self.instance.user.pk).exists()
+        if exists:
+            raise serializers.ValidationError("This email is already taken.")
+        return value
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop("user", {})
+        email = user_data.get("email")
+        if email is not None:
+            user_data["email"] = email.strip().lower()
+
+        for attr in ("first_name", "last_name", "email"):
+            if attr in user_data:
+                setattr(instance.user, attr, user_data[attr])
+        instance.user.save()
+
+        return super().update(instance, validated_data)
