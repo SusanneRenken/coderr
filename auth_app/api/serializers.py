@@ -47,3 +47,37 @@ class RegistrationSerializer(serializers.ModelSerializer):
         Profile.objects.create(user=user, type=user_type)
 
         return user
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+    first_name = serializers.CharField(
+        source='user.first_name', allow_blank=True, required=False)
+    last_name = serializers.CharField(
+        source='user.last_name', allow_blank=True, required=False)
+    email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = Profile
+        fields = [
+            'user',
+            'username',
+            'first_name',
+            'last_name',
+            'file',
+            'location',
+            'tel',
+            'description',
+            'working_hours',
+            'type',
+            'email',
+            'created_at'
+        ]
+        read_only_fields = ['type', 'created_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {key: ("" if value is None else value) for key, value in data.items()}
+
+    

@@ -1,11 +1,12 @@
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.throttling import ScopedRateThrottle
-from .serializers import RegistrationSerializer
+from auth_app.models import Profile
+from .serializers import RegistrationSerializer, ProfileSerializer
 
 
 class RegistrationView(APIView):
@@ -51,3 +52,17 @@ class LoginView(ObtainAuthToken):
             'email': user.email,
             'user_id': user.id
         })
+
+
+class ProfileDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    http_method_names = ["get","patch","head","options"]
+
+
+class ProfileBusinessView(generics.ListAPIView):
+    pass
+
+
+class ProfileCustomerView(generics.ListAPIView):
+    pass
