@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from auth_app.models import Profile
+from django.utils import timezone
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -90,6 +91,16 @@ class ProfileSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
+        if "file" in validated_data:
+            file_val = validated_data["file"]
+            if file_val in (None, ""):
+                if instance.file:
+                    instance.file.delete(save=False)
+                validated_data["file"] = None
+                validated_data["uploaded_at"] = None
+            else:
+                validated_data["uploaded_at"] = timezone.now() 
+
         user_data = validated_data.pop("user", {})
         email = user_data.get("email")
         if email is not None:
@@ -101,3 +112,35 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.user.save()
 
         return super().update(instance, validated_data)
+
+class ProfileBusinessSerializer(ProfileSerializer):
+
+    class Meta(ProfileSerializer.Meta):
+        model = Profile
+        fields = [
+            'user',
+            'username',
+            'first_name',
+            'last_name',
+            'file',
+            'location',
+            'tel',
+            'description',
+            'working_hours',
+            'type'
+        ]
+        read_only_fields = ['type', 'created_at']
+
+class ProfileCustomerSerializer(ProfileSerializer):
+
+    class Meta(ProfileSerializer.Meta):
+        model = Profile
+        fields = [
+            'user',
+            'username',
+            'first_name',
+            'last_name',
+            'file',
+            'uploaded_at',
+            'type'
+        ]

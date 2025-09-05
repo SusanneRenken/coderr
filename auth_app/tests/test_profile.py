@@ -4,6 +4,8 @@ from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 from auth_app.api.serializers import ProfileSerializer
 from auth_app.models import Profile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 
 class ProfileHappyPathTests(APITestCase):
 
@@ -118,6 +120,84 @@ class ProfileHappyPathTests(APITestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, self.user.email)
 
+    def test_get_business_profiles(self):
+        url = reverse('profile-business-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['type'], 'business')
+        self.assertNotIn('email', response.data[0])
+
+    def test_get_customer_profiles(self):
+        url = reverse('profile-customer-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['type'], 'customer')
+        self.assertNotIn('email', response.data[0])
+        self.assertNotIn('location', response.data[0])
+        self.assertNotIn('tel', response.data[0])
+        self.assertNotIn('description', response.data[0])
+        self.assertNotIn('working_hours', response.data[0])
+
+    def test_upload_file_sets_uploaded_at(self):
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        upload = SimpleUploadedFile("avatar.jpg", b"file_content", content_type="image/jpeg")
+
+        response = self.client.patch(url, {'file': upload}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.user_profile.refresh_from_db()
+        self.assertTrue(self.user_profile.file.name.startswith("profile/"))
+        self.assertTrue(self.user_profile.file.name.lower().endswith(".jpg"))
+        self.assertIn("avatar", self.user_profile.file.name.lower())
+
+    def test_patch_without_file_keeps_uploaded_at(self):
+        self.user_profile.file = SimpleUploadedFile("old.jpg", b"abc", content_type="image/jpeg")
+        self.user_profile.uploaded_at = timezone.now()
+        self.user_profile.save()
+        before = self.user_profile.uploaded_at
+
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        response = self.client.patch(url, {'description': 'no file changed'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.user_profile.refresh_from_db()
+        self.assertEqual(self.user_profile.description, 'no file changed')
+        self.assertEqual(self.user_profile.uploaded_at, before)
+
+    def test_reupload_file_updates_uploaded_at(self):
+        first_upload = SimpleUploadedFile("first.jpg", b"aaa", content_type="image/jpeg")
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        self.client.patch(url, {'file': first_upload}, format='multipart')
+        self.user_profile.refresh_from_db()
+        first_time = self.user_profile.uploaded_at
+        first_name = self.user_profile.file.name
+
+        second_upload = SimpleUploadedFile("second.jpg", b"bbb", content_type="image/jpeg")
+        response = self.client.patch(url, {'file': second_upload}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.user_profile.refresh_from_db()
+        self.assertNotEqual(self.user_profile.file.name, first_name)
+        self.assertTrue(self.user_profile.file.name.startswith("profile/"))
+        self.assertTrue(self.user_profile.file.name.lower().endswith(".jpg"))
+        self.assertIn("second", self.user_profile.file.name.lower())
+        self.assertGreater(self.user_profile.uploaded_at, first_time)
+
+    def test_delete_file_sets_uploaded_at_none(self):
+        self.user_profile.file = SimpleUploadedFile("deleteme.jpg", b"abc", content_type="image/jpeg")
+        self.user_profile.uploaded_at = timezone.now()
+        self.user_profile.save()
+
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        response = self.client.patch(url, {'file': ''}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.user_profile.refresh_from_db()
+        self.assertFalse(bool(self.user_profile.file))
+        self.assertIsNone(self.user_profile.uploaded_at)
+
 
 class ProfileValidationTests(APITestCase):
 
@@ -207,6 +287,7 @@ class ProfileValidationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', response.data)
 
+
 class ProfilePermissionTests(APITestCase):
 
     @classmethod
@@ -239,3 +320,13 @@ class ProfilePermissionTests(APITestCase):
         url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
         response = self.client.patch(url, data={'first_name': 'hacker'})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_user_get_business_profile(self):
+        url = reverse('profile-business-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_unauthenticated_user_get_customer_profile(self):
+        url = reverse('profile-customer-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

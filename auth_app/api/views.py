@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.throttling import ScopedRateThrottle
 from auth_app.models import Profile
-from .serializers import RegistrationSerializer, ProfileSerializer
+from .serializers import RegistrationSerializer, ProfileSerializer, ProfileBusinessSerializer, ProfileCustomerSerializer
 from .permissions import IsOwnerProfile
 
 
@@ -63,8 +63,14 @@ class ProfileDetailView(generics.RetrieveUpdateAPIView):
 
 
 class ProfileBusinessView(generics.ListAPIView):
-    pass
+    serializer_class = ProfileBusinessSerializer
+
+    def get_queryset(self):
+        return Profile.objects.filter(type="business")
 
 
 class ProfileCustomerView(generics.ListAPIView):
-    pass
+    serializer_class = ProfileCustomerSerializer
+
+    def get_queryset(self):
+        return Profile.objects.filter(type="customer")
