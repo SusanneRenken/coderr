@@ -14,9 +14,8 @@ class OffersHappyPathTests(APITestCase):
             password='testpassword'
         )
         cls.user_profile = Profile.objects.create(user=cls.user, type='business')
+        cls.client.force_authenticate(user=cls.user)
 
-    def setUp(self):
-        self.client.force_authenticate(user=self.user)
 
     def test_create_offer(self):
         url =  reverse('offer-list')
@@ -24,6 +23,8 @@ class OffersHappyPathTests(APITestCase):
             'title': 'Test Offer',
             'description': 'This is a test offer'
         }
-        
+
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], 'Test Offer')
+        self.assertEqual(response.data['description'], 'This is a test offer')
