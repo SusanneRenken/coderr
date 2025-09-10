@@ -140,17 +140,17 @@ from django.utils import timezone
 #         self.assertNotIn('description', response.data[0])
 #         self.assertNotIn('working_hours', response.data[0])
 
-#     def test_upload_file_sets_uploaded_at(self):
-#         url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
-#         upload = SimpleUploadedFile("avatar.jpg", b"file_content", content_type="image/jpeg")
+    # def test_upload_file_sets_uploaded_at(self):
+    #     url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+    #     upload = SimpleUploadedFile("avatar.jpg", b"file_content", content_type="image/jpeg")
 
-#         response = self.client.patch(url, {'file': upload}, format='multipart')
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     response = self.client.patch(url, {'file': upload}, format='multipart')
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-#         self.user_profile.refresh_from_db()
-#         self.assertTrue(self.user_profile.file.name.startswith("profile/"))
-#         self.assertTrue(self.user_profile.file.name.lower().endswith(".jpg"))
-#         self.assertIn("avatar", self.user_profile.file.name.lower())
+    #     self.user_profile.refresh_from_db()
+    #     self.assertTrue(self.user_profile.file.name.startswith("profile/"))
+    #     self.assertTrue(self.user_profile.file.name.lower().endswith(".jpg"))
+    #     self.assertIn("avatar", self.user_profile.file.name.lower())
 
 #     def test_patch_without_file_keeps_uploaded_at(self):
 #         self.user_profile.file = SimpleUploadedFile("old.jpg", b"abc", content_type="image/jpeg")
