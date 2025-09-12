@@ -3,13 +3,21 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from coderr_app.models import Offer
-from .serializer import OfferSerializer
+from .serializer import OfferSerializer, OfferListSerializer
 from .permissions import IsBusinessUser, IsOfferOwner
+from .pagination import StandardResultsSetPagination
 
 class OfferViewSet(viewsets.ModelViewSet):
-    queryset = Offer.objects.all()
+    queryset = Offer.objects.select_related('user').prefetch_related('details')
     serializer_class = OfferSerializer
+    list_serializer_class = OfferListSerializer
     parser_classes = [JSONParser, MultiPartParser, FormParser]
+    pagination_class = StandardResultsSetPagination
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return self.list_serializer_class
+        return self.serializer_class
     
     def get_permissions(self):
         if self.action == "list":
@@ -21,8 +29,6 @@ class OfferViewSet(viewsets.ModelViewSet):
         elif self.action in ["update", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsOfferOwner()]
         return [IsAuthenticated()]
-
-    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
