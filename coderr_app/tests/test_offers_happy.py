@@ -125,7 +125,7 @@ class OffersHappyTests(APITestCase):
         self.assertIn('/media/offers/', patch_resp.data['image'])
         self.assertTrue(patch_resp.data['image'].endswith('.png'))
 
-    # --- GET Happy Offer ---
+    # --- GET Happy Offer List ---
 
     def test_get_200_offers_list_returns_paginated_envelope(self):
         resp = self.client.get(self.list_url)
@@ -156,9 +156,9 @@ class OffersHappyTests(APITestCase):
         resp = self.client.get(self.list_url)
         item = resp.data["results"][0]
         self.assertEqual(item["min_price"], 50)
-        self.assertEqual(item["min_delivery_time"], 3)
+        self.assertEqual(item["min_delivery_time"], 3)  
 
-    
+    # --- GET Happy Offer Detail ---  
 
     def test_get_200_offer_detail_item_shape(self):
         self.client.force_authenticate(user=self.business_user)
@@ -184,3 +184,89 @@ class OffersHappyTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data["min_price"], 50)
         self.assertEqual(resp.data["min_delivery_time"], 3)
+
+    # --- PATCH Happy Offer ---
+
+    def test_patch_200_full_offer(self):
+        self.client.force_authenticate(user=self.business_user)
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "title": "Updated Title",
+                "description": "Updated Description",
+                "details": [
+                    {"offer_type": "basic", "price": 60},
+                    {"offer_type": "standard", "price": 110},
+                    {"offer_type": "premium", "price": 210},
+                ],
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check main offer fields
+        self.assertEqual(response.data['id'], self.offer.id)
+        self.assertEqual(response.data['title'], "Updated Title")
+        self.assertEqual(response.data['description'], "Updated Description")
+        self.assertIn('details', response.data)
+
+        # Check details
+        details = response.data['details']
+        self.assertEqual(len(details), 3)
+        for d in details:
+            if d['offer_type'] == 'basic':
+                self.assertEqual(d['price'], 60)
+            elif d['offer_type'] == 'standard':
+                self.assertEqual(d['price'], 110)
+            elif d['offer_type'] == 'premium':
+                self.assertEqual(d['price'], 210)
+
+    def test_patch_200_partial_offer(self):
+        self.client.force_authenticate(user=self.business_user)
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "description": "Partially Updated Description",
+                "details": [
+                    {"offer_type": "standard", "delivery_time_in_days": 6},
+                ],
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check main offer fields
+        self.assertEqual(response.data['id'], self.offer.id)
+        self.assertEqual(response.data['title'], self.offer.title)
+        self.assertEqual(response.data['description'],
+                         "Partially Updated Description")
+        self.assertIn('details', response.data)
+
+        # Check details
+        details = response.data['details']
+        self.assertEqual(len(details), 3)
+        for d in details:
+            if d['offer_type'] == 'standard':
+                self.assertEqual(d['delivery_time_in_days'], 6)
+            elif d['offer_type'] == 'basic':
+                self.assertEqual(d['delivery_time_in_days'], 3)
+            elif d['offer_type'] == 'premium':
+                self.assertEqual(d['delivery_time_in_days'], 7)
+
+    def test_patch_200_image_post(self):
+        self.client.force_authenticate(user=self.business_user)
+        file_bytes = b'fake image bytes'
+        upload = SimpleUploadedFile(
+            'logo.png', file_bytes, content_type='image/png')
+        
+        response = self.client.patch(
+            self.detail_url,
+            data={'image': upload},
+            format='multipart'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.offer.id)
+        self.assertIn('image', response.data)

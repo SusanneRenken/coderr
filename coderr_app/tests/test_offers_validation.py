@@ -37,7 +37,8 @@ class OfferValidationTests(APITestCase):
         }
         data.update(overrides)
         return data
-
+    
+    # --- POST Validations ---
 
     def test_post_400_missing_details(self):
         data = self._payload()
@@ -94,6 +95,8 @@ class OfferValidationTests(APITestCase):
                 )
                 self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    # --- GET Validations ---
+
     def test_get_404_out_of_range_page_returns(self):
         self.client.post(self.list_url, self._payload(), format="json")
         resp = self.client.get(self.list_url + "?page=999")
@@ -103,4 +106,50 @@ class OfferValidationTests(APITestCase):
         resp = self.client.get(reverse("offer-detail", args=[999]))
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
-        
+    # --- PATCH Validations ---
+
+    def test_patch_400_duplicate_types_in_details(self):
+        # Create an offer first
+        post_resp = self.client.post(self.list_url, self._payload(), format="json")
+        self.assertEqual(post_resp.status_code, status.HTTP_201_CREATED)
+        offer_id = post_resp.data["id"]
+        detail_id = post_resp.data["details"][0]["id"]
+        patch_url = reverse("offer-detail", args=[offer_id])
+
+        # Attempt to patch with duplicate offer_type in details
+        new_details = [
+            {"id": detail_id, "title": "Basic Updated", "revisions": 2,
+             "delivery_time_in_days": 4, "price": 60, "features": ["A", "X"], "offer_type": "basic"},
+            {"title": "Standard New", "revisions": 3,
+             "delivery_time_in_days": 6, "price": 120, "features": ["A", "B", "Y"], "offer_type": "basic"},
+        ]
+        resp = self.client.patch(
+            patch_url, {"details": new_details}, format="json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_400_invalid_field_values_in_details(self):
+        # Create an offer first
+        post_resp = self.client.post(self.list_url, self._payload(), format="json")
+        self.assertEqual(post_resp.status_code, status.HTTP_201_CREATED)
+        offer_id = post_resp.data["id"]
+        detail_id = post_resp.data["details"][0]["id"]
+        patch_url = reverse("offer-detail", args=[offer_id])
+
+        bad_cases = [
+            {"id": detail_id, "revisions": -1},
+            {"id": detail_id, "delivery_time_in_days": 0},
+            {"id": detail_id, "price": -10},
+            {"id": detail_id, "features": "not-a-list"},
+        ]
+        for bad in bad_cases:
+            with self.subTest(bad=bad):
+                resp = self.client.patch(
+                    patch_url, {"details": [bad]}, format="json"
+                )
+                self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_404_no_offer_with_this_id(self):
+        patch_url = reverse("offer-detail", args=[999])
+        resp = self.client.patch(patch_url, {"title": "New Title"}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

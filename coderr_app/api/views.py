@@ -9,8 +9,11 @@ from .pagination import StandardResultsSetPagination
 
 class OfferViewSet(viewsets.ModelViewSet):
     queryset = Offer.objects.select_related('user').prefetch_related('details')
+
     serializer_class = OfferSerializer
     list_serializer_class = OfferListSerializer
+    detail_serializer_class = OfferDetailSerializer
+
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     pagination_class = StandardResultsSetPagination
 
@@ -18,7 +21,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return self.list_serializer_class
         elif self.action == 'retrieve':
-            return OfferDetailSerializer
+            return self.detail_serializer_class
         return self.serializer_class
     
     def get_permissions(self):
@@ -35,5 +38,5 @@ class OfferViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-class RetrieveAPIView(APIView):
+class OfferDetailsRetrieveAPIView(APIView):
     pass

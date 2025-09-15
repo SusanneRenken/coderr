@@ -75,3 +75,13 @@ class OfferPermissionTests(APITestCase):
         resp = self.client.get(self.detail_url)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    # --- PATCH Permissions ---
+
+    def test_patch_401_offer_detail_requires_auth(self):
+        resp = self.client.patch(self.detail_url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_patch_403_non_business_user(self):
+        self.client.force_authenticate(user=self.customer_user)
+        resp = self.client.patch(self.detail_url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
