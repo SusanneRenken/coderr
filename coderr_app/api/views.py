@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from coderr_app.models import Offer
-from .serializer import OfferSerializer, OfferListSerializer
+from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer
 from .permissions import IsBusinessUser, IsOfferOwner
 from .pagination import StandardResultsSetPagination
 
@@ -17,6 +17,8 @@ class OfferViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return self.list_serializer_class
+        elif self.action == 'retrieve':
+            return OfferDetailSerializer
         return self.serializer_class
     
     def get_permissions(self):

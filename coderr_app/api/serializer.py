@@ -109,6 +109,18 @@ class OfferListSerializer(OfferSerializer):
         return obj.details.aggregate(
             min_delivery_time=Min('delivery_time_in_days')
         )['min_delivery_time']
+    
 
-class OfferDetailSerializer(OfferSerializer):
+class OfferDetailSerializer(OfferListSerializer):
+
+    class Meta:
+        model = Offer
+        fields = ['id', 'user', 'title', 'image', 'description', 'created_at',
+                  'updated_at', 'details', 'min_price', 'min_delivery_time']
+        read_only_fields = ['id']
+
+
+
+
+class OfferDetailItemSerializer(serializers.ModelSerializer):
     pass
