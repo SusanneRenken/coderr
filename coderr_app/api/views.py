@@ -1,4 +1,6 @@
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Min
+from rest_framework import viewsets, filters
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
@@ -6,6 +8,7 @@ from coderr_app.models import Offer
 from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer
 from .permissions import IsBusinessUser, IsOfferOwner
 from .pagination import StandardResultsSetPagination
+from .filters import OfferFilter
 
 class OfferViewSet(viewsets.ModelViewSet):
     queryset = Offer.objects.select_related('user').prefetch_related('details')
@@ -14,8 +17,22 @@ class OfferViewSet(viewsets.ModelViewSet):
     list_serializer_class = OfferListSerializer
     detail_serializer_class = OfferDetailSerializer
 
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = OfferFilter
+    search_fields = ['title', 'description']
+    ordering_fields = ['updated_at', 'min_price']
+    ordering = ['-updated_at']
+
+
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        queryset = Offer.objects.select_related("user").prefetch_related("details")
+        return queryset.annotate(
+            min_price=Min("details__price"),
+            min_delivery_time=Min("details__delivery_time_in_days"),
+        )
 
     def get_serializer_class(self):
         if self.action == 'list':

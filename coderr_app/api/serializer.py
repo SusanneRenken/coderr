@@ -115,8 +115,8 @@ class OfferListSerializer(OfferSerializer):
     user_detail = OfferListUserNestedSerializer(source='user', read_only=True)
     details = OfferListDetailNestedSerializer(many=True, read_only=True)
 
-    min_price = serializers.SerializerMethodField()
-    min_delivery_time = serializers.SerializerMethodField()
+    min_price = serializers.IntegerField(read_only=True)
+    min_delivery_time = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Offer
@@ -124,13 +124,6 @@ class OfferListSerializer(OfferSerializer):
                   'updated_at', 'details', 'min_price', 'min_delivery_time', 'user_detail']
         read_only_fields = ['id']
 
-    def get_min_price(self, obj):
-        return obj.details.aggregate(min_price=Min('price'))['min_price']
-
-    def get_min_delivery_time(self, obj):
-        return obj.details.aggregate(
-            min_delivery_time=Min('delivery_time_in_days')
-        )['min_delivery_time']
     
 class OfferDetailSerializer(OfferListSerializer):
 

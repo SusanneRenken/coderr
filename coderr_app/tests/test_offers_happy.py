@@ -270,3 +270,16 @@ class OffersHappyTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.offer.id)
         self.assertIn('image', response.data)
+
+    # --- DELETE Happy Offer ---
+    def test_delete_204_offer(self):
+        self.client.force_authenticate(user=self.business_user)
+        offernum_before = Offer.objects.count()
+        detailnum_before = OfferDetail.objects.count()
+
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Check DB state
+        self.assertEqual(Offer.objects.count(), offernum_before - 1)
+        self.assertEqual(OfferDetail.objects.count(), detailnum_before - 3)

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
     'core_app',
@@ -141,9 +142,12 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '50/day',
-        'user': '60/day',
+        'anon': '100/day',
+        'user': '120/day',
         'auth_registration': '30/hour',
         'auth_login': '50/minute',
     },
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
 }

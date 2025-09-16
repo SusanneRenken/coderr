@@ -85,3 +85,29 @@ class OfferPermissionTests(APITestCase):
         self.client.force_authenticate(user=self.customer_user)
         resp = self.client.patch(self.detail_url)
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_patch_403_not_offer_owner(self):
+        self.client.force_authenticate(user=self.business_user)
+        other_user = User.objects.create_user(
+            username="other_business_user", email="other_business_user@example.com", password="x"
+        )
+        other_profile = Profile.objects.create(user=other_user, type="business")
+        self.client.force_authenticate(user=other_user)
+        resp = self.client.patch(self.detail_url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        
+    # --- DELETE Permissions ---
+    def test_delete_401_offer_detail_requires_auth(self):
+        resp = self.client.delete(self.detail_url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_403_not_offer_owner(self):
+        self.client.force_authenticate(user=self.business_user)
+        other_user = User.objects.create_user(
+            username="other_business_user", email="other_business_user@example.com", password="x"
+        )
+        other_profile = Profile.objects.create(user=other_user, type="business")
+        self.client.force_authenticate(user=other_user)
+        resp = self.client.delete(self.detail_url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)

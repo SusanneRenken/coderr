@@ -153,3 +153,13 @@ class OfferValidationTests(APITestCase):
         patch_url = reverse("offer-detail", args=[999])
         resp = self.client.patch(patch_url, {"title": "New Title"}, format="json")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+    # --- DELETE Validations ---
+
+    def test_delete_404_no_offer_with_this_id(self):
+        delete_url = reverse("offer-detail", args=[999])
+        resp = self.client.delete(delete_url)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    
