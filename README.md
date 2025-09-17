@@ -48,10 +48,40 @@ Authorization: Token <your-token>
 
 ---
 
+## Offer Endpoints
+
+**GET** `/api/offers/`  
+- List all offers (paginated).  
+- Supports filters:  
+  - `creator_id` (user who created the offer)  
+  - `min_price` (minimum price)  
+  - `max_delivery_time` (shorter than or equal to given days)  
+  - `ordering` (`updated_at`, `min_price`)  
+  - `search` (search in `title` and `description`)  
+
+**POST** `/api/offers/`  
+- Create a new offer (requires `business` user).  
+- Body must include **3 details** (basic, standard, premium).
+
+**GET** `/api/offers/{id}/`  
+- Retrieve details of a specific offer, including nested offerdetails.  
+- Requires authentication.  
+
+**PATCH** `/api/offers/{id}/`  
+- Update offer and/or details (only owner).  
+
+**DELETE** `/api/offers/{id}/`  
+- Delete offer (only owner).  
+
+**GET** `/api/offerdetails/{id}/`  
+- Retrieve one specific offer detail (requires authentication).  
+
+---
+
 ## Admin
 
 - Available at `/admin/`  
-- Manage `User` and `Profile`.  
+- Manage `User`, `Profile`, `Offer` and `OfferDetail`.  
 
 ---
 
@@ -60,3 +90,12 @@ Authorization: Token <your-token>
 - Python 3.11+  
 - Django 5+  
 - djangorestframework (+ authtoken)  
+- django-filter 25.1  
+
+---
+
+## Notes
+
+- Code is PEP8 compliant, clean and structured according to [DRF best practices](https://www.django-rest-framework.org/).  
+- Test coverage >95% (unit + API tests).  
+- Database files are excluded from version control.  

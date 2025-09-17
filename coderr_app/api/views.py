@@ -1,7 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Min
 from rest_framework import viewsets, generics, filters
-from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from coderr_app.models import Offer, OfferDetail
@@ -11,8 +10,7 @@ from .pagination import StandardResultsSetPagination
 from .filters import OfferFilter
 
 class OfferViewSet(viewsets.ModelViewSet):
-    queryset = Offer.objects.select_related('user').prefetch_related('details')
-
+    
     serializer_class = OfferSerializer
     list_serializer_class = OfferListSerializer
     detail_serializer_class = OfferDetailSerializer
