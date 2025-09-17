@@ -134,7 +134,10 @@ class OfferDetailSerializer(OfferListSerializer):
         read_only_fields = ['id']
 
 
-
-
 class OfferDetailItemSerializer(serializers.ModelSerializer):
-    pass
+
+    class Meta:
+        model = OfferDetail
+        fields = ['id', 'title', 'revisions', 'delivery_time_in_days',
+                  'price', 'features', 'offer_type']
+        read_only_fields = ['id']

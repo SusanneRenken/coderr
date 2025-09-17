@@ -1,11 +1,11 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Min
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, generics, filters
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from coderr_app.models import Offer
-from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer
+from coderr_app.models import Offer, OfferDetail
+from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer, OfferDetailItemSerializer
 from .permissions import IsBusinessUser, IsOfferOwner
 from .pagination import StandardResultsSetPagination
 from .filters import OfferFilter
@@ -55,5 +55,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-class OfferDetailsRetrieveAPIView(APIView):
-    pass
+class OfferDetailsRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = OfferDetail.objects.all()
+    serializer_class = OfferDetailItemSerializer
+    permission_classes = [IsAuthenticated]
