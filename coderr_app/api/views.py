@@ -63,3 +63,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
+    def perform_create(self, serializer):
+        offer_detail = serializer.validated_data["offer_detail"]
+        serializer.save(customer_user=self.request.user, business_user=offer_detail.offer.user)
+
