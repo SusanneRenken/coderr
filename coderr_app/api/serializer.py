@@ -1,6 +1,5 @@
-from django.db.models import Min
 from rest_framework import serializers
-from coderr_app.models import Offer, OfferDetail
+from coderr_app.models import Offer, OfferDetail, Order
 from django.contrib.auth.models import User
 
 # --- CREATE and UPDATE SERIALIZERS ---
@@ -28,7 +27,6 @@ class OfferDetailItemNestedSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'offer_type': {'required': True}
         }
-
 
 class OfferSerializer(serializers.ModelSerializer):
     image = serializers.FileField(required=False, allow_null=True)
@@ -123,7 +121,6 @@ class OfferListSerializer(OfferSerializer):
         fields = ['id', 'user', 'title', 'image', 'description', 'created_at',
                   'updated_at', 'details', 'min_price', 'min_delivery_time', 'user_detail']
         read_only_fields = ['id']
-
     
 class OfferDetailSerializer(OfferListSerializer):
 
@@ -133,6 +130,7 @@ class OfferDetailSerializer(OfferListSerializer):
                   'updated_at', 'details', 'min_price', 'min_delivery_time']
         read_only_fields = ['id']
 
+# --- OFFER DETAIL ITEM SERIALIZER ---
 
 class OfferDetailItemSerializer(serializers.ModelSerializer):
 
@@ -141,3 +139,11 @@ class OfferDetailItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'revisions', 'delivery_time_in_days',
                   'price', 'features', 'offer_type']
         read_only_fields = ['id']
+
+
+# --- ORDER SERIALIZER (Placeholder) ---
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
