@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 
 # --- CREATE and UPDATE SERIALIZERS ---
 
+
 class OfferDetailItemNestedSerializer(serializers.ModelSerializer):
     revisions = serializers.IntegerField(min_value=0)
     delivery_time_in_days = serializers.IntegerField(min_value=1)
@@ -27,6 +28,7 @@ class OfferDetailItemNestedSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'offer_type': {'required': True}
         }
+
 
 class OfferSerializer(serializers.ModelSerializer):
     image = serializers.FileField(required=False, allow_null=True)
@@ -66,19 +68,21 @@ class OfferSerializer(serializers.ModelSerializer):
         for detail in detail_data:
             OfferDetail.objects.create(offer=offer, **detail)
         return offer
-    
+
     def update(self, instance, validated_data):
         detail_data = validated_data.pop('details', None)
 
         instance.title = validated_data.get('title', instance.title)
-        instance.description = validated_data.get('description', instance.description)
+        instance.description = validated_data.get(
+            'description', instance.description)
         instance.image = validated_data.get('image', instance.image)
         instance.save()
 
         if detail_data:
             for detail in detail_data:
                 try:
-                    single_detail = instance.details.get(offer_type=detail['offer_type'])
+                    single_detail = instance.details.get(
+                        offer_type=detail['offer_type'])
                 except OfferDetail.DoesNotExist:
                     raise serializers.ValidationError(
                         f"Detail with offer_type '{detail['offer_type']}' does not exist."
@@ -93,10 +97,12 @@ class OfferSerializer(serializers.ModelSerializer):
 
 # --- LIST and DETAIL SERIALIZERS ---
 
+
 class OfferListUserNestedSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'username']
+
 
 class OfferListDetailNestedSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(
@@ -107,6 +113,7 @@ class OfferListDetailNestedSerializer(serializers.ModelSerializer):
         model = OfferDetail
         fields = ['id', 'url']
         read_only_fields = ['id', 'url']
+
 
 class OfferListSerializer(OfferSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -121,7 +128,8 @@ class OfferListSerializer(OfferSerializer):
         fields = ['id', 'user', 'title', 'image', 'description', 'created_at',
                   'updated_at', 'details', 'min_price', 'min_delivery_time', 'user_detail']
         read_only_fields = ['id']
-    
+
+
 class OfferDetailSerializer(OfferListSerializer):
 
     class Meta:
@@ -131,6 +139,7 @@ class OfferDetailSerializer(OfferListSerializer):
         read_only_fields = ['id']
 
 # --- OFFER DETAIL ITEM SERIALIZER ---
+
 
 class OfferDetailItemSerializer(serializers.ModelSerializer):
 
@@ -144,19 +153,26 @@ class OfferDetailItemSerializer(serializers.ModelSerializer):
 # --- ORDER SERIALIZER (Placeholder) ---
 
 class OrderSerializer(serializers.ModelSerializer):
-    offer_detail = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True)
+    offer_detail_id = serializers.IntegerField(write_only=True)
+
     customer_user = serializers.PrimaryKeyRelatedField(read_only=True)
     business_user = serializers.PrimaryKeyRelatedField(read_only=True)
+
     title = serializers.CharField(source='offer_detail.title', read_only=True)
-    revisions = serializers.IntegerField(source='offer_detail.revisions', read_only=True)
-    delivery_time_in_days = serializers.IntegerField(source='offer_detail.delivery_time_in_days', read_only=True)
-    price = serializers.IntegerField(source='offer_detail.price', read_only=True)
-    features = serializers.ListField(source='offer_detail.features', read_only=True)
-    offer_type = serializers.CharField(source='offer_detail.offer_type', read_only=True)
+    revisions = serializers.IntegerField(
+        source='offer_detail.revisions', read_only=True)
+    delivery_time_in_days = serializers.IntegerField(
+        source='offer_detail.delivery_time_in_days', read_only=True)
+    price = serializers.IntegerField(
+        source='offer_detail.price', read_only=True)
+    features = serializers.ListField(
+        source='offer_detail.features', read_only=True)
+    offer_type = serializers.CharField(
+        source='offer_detail.offer_type', read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'customer_user', 'business_user', 'status', 'offer_detail', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'customer_user', 'business_user', 'status', 'created_at', 'updated_at']
-
-
+        fields = ['id', 'customer_user', 'business_user', 'status', 'offer_detail_id', 'title', 'revisions',
+                  'delivery_time_in_days', 'price', 'features', 'offer_type', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'customer_user',
+                            'business_user', 'status', 'created_at', 'updated_at']

@@ -1,11 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Min
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from coderr_app.models import Offer, OfferDetail, Order
 from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer, OfferDetailItemSerializer, OrderSerializer
-from .permissions import IsBusinessUser, IsOfferOwner
+from .permissions import IsBusinessUser, IsOfferOwner, IsCustomerUser
 from .pagination import StandardResultsSetPagination
 from .filters import OfferFilter
 
@@ -63,7 +64,17 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
-    def perform_create(self, serializer):
-        offer_detail = serializer.validated_data["offer_detail"]
-        serializer.save(customer_user=self.request.user, business_user=offer_detail.offer.user)
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsAuthenticated(), IsCustomerUser()]
+        return [IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        offer_detail_id = serializer.validated_data.pop("offer_detail_id")
+        offer_detail = get_object_or_404(OfferDetail, pk=offer_detail_id)
+
+        serializer.save(
+            offer_detail=offer_detail,
+            customer_user=self.request.user,
+            business_user=offer_detail.offer.user,
+        )

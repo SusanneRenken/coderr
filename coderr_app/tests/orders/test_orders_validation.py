@@ -6,7 +6,7 @@ from auth_app.models import Profile
 from coderr_app.models import Offer, OfferDetail
 
 
-class OrderHappyTests(APITestCase):
+class OrderPermissionTests(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
@@ -38,24 +38,27 @@ class OrderHappyTests(APITestCase):
 
         cls.list_url = reverse("order-list")
 
-    def test_post_201_order(self):
+    def test_post_400_empty_data(self):
+        self.client.force_authenticate(self.customer_user)
+        data = {}
+        resp = self.client.post(self.list_url, data, format='json')
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_post_400_invalid_data(self):
         self.client.force_authenticate(self.customer_user)
         data = {
-            "offer_detail_id": self.offer_detail_basic.id
+            "offer_detail_id": "invalid"
         }
         resp = self.client.post(self.list_url, data, format='json')
 
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(resp.data['customer_user'], self.customer_user.id)
-        self.assertEqual(resp.data['business_user'], self.business_user.id)
-        self.assertEqual(resp.data['status'], 'in_progress')
-        self.assertEqual(resp.data['title'], self.offer_detail_basic.title)
-        self.assertEqual(resp.data['revisions'],
-                         self.offer_detail_basic.revisions)
-        self.assertEqual(resp.data['delivery_time_in_days'],
-                         self.offer_detail_basic.delivery_time_in_days)
-        self.assertEqual(resp.data['price'], self.offer_detail_basic.price)
-        self.assertEqual(resp.data['features'],
-                         self.offer_detail_basic.features)
-        self.assertEqual(resp.data['offer_type'],
-                         self.offer_detail_basic.offer_type)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_post_404_offer_detail_not_found(self):
+        self.client.force_authenticate(self.customer_user)
+        data = {
+            "offer_detail_id": 9999
+        }
+        resp = self.client.post(self.list_url, data, format='json')
+
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

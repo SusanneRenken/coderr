@@ -6,7 +6,7 @@ from auth_app.models import Profile
 from coderr_app.models import Offer, OfferDetail
 
 
-class OrderHappyTests(APITestCase):
+class OrderPermisssionTests(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
@@ -38,24 +38,19 @@ class OrderHappyTests(APITestCase):
 
         cls.list_url = reverse("order-list")
 
-    def test_post_201_order(self):
-        self.client.force_authenticate(self.customer_user)
+    def test_post_401_anonymous(self):
         data = {
             "offer_detail_id": self.offer_detail_basic.id
         }
         resp = self.client.post(self.list_url, data, format='json')
 
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(resp.data['customer_user'], self.customer_user.id)
-        self.assertEqual(resp.data['business_user'], self.business_user.id)
-        self.assertEqual(resp.data['status'], 'in_progress')
-        self.assertEqual(resp.data['title'], self.offer_detail_basic.title)
-        self.assertEqual(resp.data['revisions'],
-                         self.offer_detail_basic.revisions)
-        self.assertEqual(resp.data['delivery_time_in_days'],
-                         self.offer_detail_basic.delivery_time_in_days)
-        self.assertEqual(resp.data['price'], self.offer_detail_basic.price)
-        self.assertEqual(resp.data['features'],
-                         self.offer_detail_basic.features)
-        self.assertEqual(resp.data['offer_type'],
-                         self.offer_detail_basic.offer_type)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_post_403_no_customer(self):
+        self.client.force_authenticate(self.business_user)
+        data = {
+            "offer_detail_id": self.offer_detail_basic.id
+        }
+        resp = self.client.post(self.list_url, data, format='json')
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
