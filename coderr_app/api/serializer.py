@@ -176,3 +176,26 @@ class OrderSerializer(serializers.ModelSerializer):
                   'delivery_time_in_days', 'price', 'features', 'offer_type', 'created_at', 'updated_at']
         read_only_fields = ['id', 'customer_user',
                             'business_user', 'status', 'created_at', 'updated_at']
+        
+class OrderStatusUpdateSerializer(OrderSerializer):
+
+    status = serializers.ChoiceField(choices=Order.STATUS_CHOICES)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'customer_user', 'business_user', 'status', 'title', 'revisions',
+                  'delivery_time_in_days', 'price', 'features', 'offer_type', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id', 'customer_user', 'business_user', 'title', 'revisions',
+            'delivery_time_in_days', 'price', 'features', 'offer_type', 'created_at', 'updated_at'
+        ]
+
+    def validate(self, attrs):
+        allowed = {'status'}
+        forbidden = set(attrs.keys()) - allowed
+        if forbidden:
+            raise serializers.ValidationError(f"Forbidden fields: {', '.join(forbidden)}")
+        if not attrs:
+            raise serializers.ValidationError("No data provided.")
+        return attrs
+

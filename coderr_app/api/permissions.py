@@ -12,3 +12,12 @@ class IsCustomerUser(BasePermission):
 class IsOfferOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user
+
+class IsOrderBusinessOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.business_user == request.user
+    
+class IsStaffUser(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_staff
+    
