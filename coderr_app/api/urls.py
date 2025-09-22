@@ -2,11 +2,12 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework import routers
-from .views import OfferViewSet, OfferDetailsRetrieveAPIView, OrderCountView, OrderViewSet
+from .views import OfferViewSet, OfferDetailsRetrieveAPIView, OrderCountView, OrderViewSet, ReviewViewSet
 
 router = routers.SimpleRouter()
 router.register(r'offers', OfferViewSet)
 router.register(r'orders', OrderViewSet)
+router.register(r'reviews', ReviewViewSet)
 
 urlpatterns = [
     path('offerdetails/<int:pk>/', OfferDetailsRetrieveAPIView.as_view(),

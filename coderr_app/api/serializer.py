@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from coderr_app.models import Offer, OfferDetail, Order
+from rest_framework.exceptions import PermissionDenied
+from coderr_app.models import Offer, OfferDetail, Order, Review
 from django.contrib.auth.models import User
 
 # --- CREATE and UPDATE SERIALIZERS ---
@@ -198,4 +199,46 @@ class OrderStatusUpdateSerializer(OrderSerializer):
         if not attrs:
             raise serializers.ValidationError("No data provided.")
         return attrs
+    
+# --- REVIEW SERIALIZER ---
 
+class ReviewSerializer(serializers.ModelSerializer):
+    business_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    reviewer = serializers.PrimaryKeyRelatedField(read_only=True)
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    description = serializers.CharField()
+
+    class Meta:
+        model = Review
+        fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'reviewer', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        business_user = attrs.get("business_user")
+
+        if not hasattr(business_user, "profile") or business_user.profile.type != "business":
+            raise serializers.ValidationError({"business_user": "Must be a business profile."})
+
+        if user and Review.objects.filter(reviewer=user, business_user=business_user).exists():
+            raise serializers.ValidationError("You have already reviewed this business user.")
+
+        return attrs
+
+class ReviewPatchSerializer(ReviewSerializer):
+
+    class Meta(ReviewSerializer.Meta):
+        model = Review
+        fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'business_user', 'reviewer', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        if not hasattr(self, 'initial_data') or not isinstance(self.initial_data, dict):
+            return attrs
+
+        forbidden = set(self.initial_data.keys()) & {'business_user', 'reviewer'}
+        if forbidden:
+            raise serializers.ValidationError({'non_field_errors': f"Forbidden fields: {', '.join(sorted(forbidden))}"})
+
+        return attrs

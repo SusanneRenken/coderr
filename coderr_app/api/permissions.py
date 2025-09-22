@@ -1,6 +1,5 @@
 from rest_framework.permissions import BasePermission
 
-
 class IsBusinessUser(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.type == 'business'
@@ -20,4 +19,8 @@ class IsOrderBusinessOwner(BasePermission):
 class IsStaffUser(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.is_staff
-    
+
+class IsReviewAuthor(BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and obj.reviewer == request.user

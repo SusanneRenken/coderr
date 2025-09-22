@@ -51,4 +51,13 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.id}: {self.offer_detail.title} ({self.status})"
 
+class Review(models.Model):
+    business_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_reviews")
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="given_reviews")
+    rating = models.IntegerField()
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"Review {self.id} for {self.business_user.username} by {self.reviewer.username}"

@@ -7,11 +7,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from coderr_app.models import Offer, OfferDetail, Order
-from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer, OfferDetailItemSerializer, OrderSerializer, OrderStatusUpdateSerializer
-from .permissions import IsBusinessUser, IsOfferOwner, IsCustomerUser, IsOrderBusinessOwner, IsStaffUser
+from coderr_app.models import Offer, OfferDetail, Order, Review
+from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer, OfferDetailItemSerializer, OrderSerializer, OrderStatusUpdateSerializer, ReviewSerializer, ReviewPatchSerializer
+from .permissions import IsBusinessUser, IsOfferOwner, IsCustomerUser, IsOrderBusinessOwner, IsReviewAuthor, IsStaffUser
 from .pagination import StandardResultsSetPagination
-from .filters import OfferFilter
+from .filters import OfferFilter, ReviewFilter
 
 
 class OfferViewSet(viewsets.ModelViewSet):
@@ -65,7 +65,6 @@ class OfferDetailsRetrieveAPIView(generics.RetrieveAPIView):
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailItemSerializer
 
-
 class OrderViewSet(viewsets.ModelViewSet):
 
     queryset = Order.objects.all()
@@ -82,7 +81,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 return Order.objects.filter(business_user=user).select_related('offer_detail', 'customer_user')
             return Order.objects.none()
         return Order.objects.select_related('offer_detail', 'customer_user', 'business_user')
-    
+
     def get_serializer_class(self):
         if self.action in ['partial_update', 'update']:
             return self.patch_serializer_class
@@ -93,7 +92,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             return [IsCustomerUser()]
         if self.action in ["update", "partial_update"]:
             return [IsOrderBusinessOwner()]
-        if self.action == "destroy":            
+        if self.action == "destroy":
             return [IsStaffUser()]
         return [IsAuthenticated()]
 
@@ -114,5 +113,32 @@ class OrderCountView(APIView):
         status_value = kwargs.get("status", "in_progress")
         count_key = kwargs.get("count_key", "order_count")
         business_user = get_object_or_404(User, pk=business_user_id)
-        count = Order.objects.filter(business_user=business_user, status=status_value).count()
+        count = Order.objects.filter(
+            business_user=business_user, status=status_value).count()
         return Response({count_key: count})
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    patch_serializer_class = ReviewPatchSerializer    
+    
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = ReviewFilter
+    ordering_fields = ['updated_at', 'rating']
+    ordering = ['-updated_at']
+
+    def get_serializer_class(self):
+        if self.action in ['partial_update', 'update']:
+            return self.patch_serializer_class
+        return super().get_serializer_class()
+
+
+    def get_permissions(self):
+        if self.action in ["create"]:
+            return [IsCustomerUser()]
+        if self.action in ["partial_update", "update", "destroy"]:
+            return [IsReviewAuthor()]
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        serializer.save(reviewer=self.request.user)
