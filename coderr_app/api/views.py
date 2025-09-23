@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Min
+from django.db.models import Min, Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, filters
 from rest_framework.views import APIView
@@ -12,7 +12,7 @@ from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSeriali
 from .permissions import IsBusinessUser, IsOfferOwner, IsCustomerUser, IsOrderBusinessOwner, IsReviewAuthor, IsStaffUser
 from .pagination import StandardResultsSetPagination
 from .filters import OfferFilter, ReviewFilter
-
+from auth_app.models import Profile
 
 class OfferViewSet(viewsets.ModelViewSet):
     queryset = Offer.objects.all()
@@ -109,9 +109,12 @@ class OrderViewSet(viewsets.ModelViewSet):
 class OrderCountView(APIView):
     permission_classes = [IsAuthenticated]
 
+    status = "in_progress"
+    count_key = "order_count"
+
     def get(self, request, business_user_id: int, *args, **kwargs):
-        status_value = kwargs.get("status", "in_progress")
-        count_key = kwargs.get("count_key", "order_count")
+        status_value = getattr(self, "status", kwargs.get("status", "in_progress"))
+        count_key = getattr(self, "count_key", kwargs.get("count_key", "order_count"))
         business_user = get_object_or_404(User, pk=business_user_id)
         count = Order.objects.filter(
             business_user=business_user, status=status_value).count()
@@ -142,3 +145,22 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(reviewer=self.request.user)
+
+class BaseInfoAPIView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request, *args, **kwargs):
+        review_count = Review.objects.count()
+        avg = Review.objects.aggregate(avg=Avg("rating"))["avg"] or 0
+        average_rating = round(avg, 1)
+        business_profile_count = Profile.objects.filter(type="business").count()
+        offer_count = Offer.objects.count()
+
+        data = {
+            "review_count": review_count,
+            "average_rating": average_rating,
+            "business_profile_count": business_profile_count,
+            "offer_count": offer_count,
+        }
+
+        return Response(data)
