@@ -1,3 +1,9 @@
+"""Views for coderr_app: offers, offer details, orders and reviews.
+
+Only docstrings and short comments are added in this patch; the view
+logic and permissions remain unchanged.
+"""
+
 from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Min, Avg
@@ -8,21 +14,43 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from coderr_app.models import Offer, OfferDetail, Order, Review
-from .serializer import OfferSerializer, OfferListSerializer, OfferDetailSerializer, OfferDetailItemSerializer, OrderSerializer, OrderStatusUpdateSerializer, ReviewSerializer, ReviewPatchSerializer
-from .permissions import IsBusinessUser, IsOfferOwner, IsCustomerUser, IsOrderBusinessOwner, IsReviewAuthor, IsStaffUser
+from .serializer import (
+    OfferSerializer,
+    OfferListSerializer,
+    OfferDetailSerializer,
+    OfferDetailItemSerializer,
+    OrderSerializer,
+    OrderStatusUpdateSerializer,
+    ReviewSerializer,
+    ReviewPatchSerializer,
+)
+from .permissions import (
+    IsBusinessUser,
+    IsOfferOwner,
+    IsCustomerUser,
+    IsOrderBusinessOwner,
+    IsReviewAuthor,
+    IsStaffUser,
+)
 from .pagination import StandardResultsSetPagination
 from .filters import OfferFilter, ReviewFilter
 from auth_app.models import Profile
 
+
 class OfferViewSet(viewsets.ModelViewSet):
+    """CRUD for Offer objects with filtering, searching and ordering.
+
+    The view dynamically selects a serializer class for list/detail vs
+    create/update and enforces permissions per action.
+    """
+
     queryset = Offer.objects.all()
 
     serializer_class = OfferSerializer
     list_serializer_class = OfferListSerializer
     detail_serializer_class = OfferDetailSerializer
 
-    filter_backends = [DjangoFilterBackend,
-                       filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = OfferFilter
     search_fields = ['title', 'description']
     ordering_fields = ['updated_at', 'min_price']
@@ -32,8 +60,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        queryset = Offer.objects.select_related(
-            "user").prefetch_related("details")
+        queryset = Offer.objects.select_related("user").prefetch_related("details")
         return queryset.annotate(
             min_price=Min("details__price"),
             min_delivery_time=Min("details__delivery_time_in_days"),
@@ -47,6 +74,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
     def get_permissions(self):
+        # Map actions to permission classes
         if self.action == "list":
             return [AllowAny()]
         elif self.action == "retrieve":
@@ -62,8 +90,11 @@ class OfferViewSet(viewsets.ModelViewSet):
 
 
 class OfferDetailsRetrieveAPIView(generics.RetrieveAPIView):
+    """Retrieve single OfferDetail item."""
+
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailItemSerializer
+
 
 class OrderViewSet(viewsets.ModelViewSet):
 
@@ -75,6 +106,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if self.action == "list":
+            # Customers see their orders, business users see business orders
             if hasattr(user, 'profile') and user.profile.type == 'customer':
                 return Order.objects.filter(customer_user=user).select_related('offer_detail', 'business_user')
             elif hasattr(user, 'profile') and user.profile.type == 'business':
@@ -106,7 +138,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             business_user=offer_detail.offer.user,
         )
 
+
 class OrderCountView(APIView):
+    """Return a count of orders for a given business user and status.
+
+    The view is configured via as_view(status=..., count_key=...) in urls.
+    """
+
     permission_classes = [IsAuthenticated]
 
     status = "in_progress"
@@ -120,7 +158,10 @@ class OrderCountView(APIView):
             business_user=business_user, status=status_value).count()
         return Response({count_key: count})
 
+
 class ReviewViewSet(viewsets.ModelViewSet):
+    """CRUD for reviews with filtering and ordering support."""
+
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     patch_serializer_class = ReviewPatchSerializer    
@@ -146,7 +187,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(reviewer=self.request.user)
 
+
 class BaseInfoAPIView(APIView):
+    """Public endpoint that returns aggregate base information used by the frontend."""
+
     permission_classes = [AllowAny]
     
     def get(self, request, *args, **kwargs):
