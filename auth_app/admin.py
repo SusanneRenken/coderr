@@ -12,7 +12,8 @@ from .models import Profile
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
 	# Show key fields in the admin list view for quick scanning
-	list_display = ("id", "user", "type", "created_at")
+	# 'id' no longer exists because Profile.user is primary_key; show user instead
+	list_display = ("user", "type", "created_at")
 	# Allow searching by username/email and profile type
 	search_fields = ("user__username", "user__email", "type")
 	# Filter by profile type in the sidebar

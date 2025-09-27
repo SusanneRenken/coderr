@@ -30,7 +30,13 @@ class Profile(models.Model):
     ]
 
     # Link to the Django User; related_name='profile' allows user.profile
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    # Make the Profile primary key identical to the User primary key so that
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        primary_key=True,
+    )
 
     # Business vs customer is used in views/permissions to control behavior
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='customer')

@@ -28,21 +28,21 @@ class ProfileHappyPathTests(APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_get_own_profile(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, ProfileSerializer(self.user_profile).data)
 
     def test_get_other_profile(self):
-        url = reverse('profile-detail', kwargs={'pk': self.other_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.other_profile.user_id})
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, ProfileSerializer(self.other_profile).data)
 
     def test_get_profile_fields_empty(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -54,7 +54,7 @@ class ProfileHappyPathTests(APITestCase):
         self.assertEqual(response.data['working_hours'], '')
 
     def test_update_profile_by_user(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {
             'first_name': 'updatedfirstname',
             'last_name': 'updatedlastname',
@@ -85,7 +85,7 @@ class ProfileHappyPathTests(APITestCase):
         self.user_profile.working_hours = "8-16"
         self.user_profile.save()
 
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {
             'location': 'only this field changes'
         }
@@ -100,7 +100,7 @@ class ProfileHappyPathTests(APITestCase):
         self.assertEqual(self.user_profile.working_hours, '8-16')
 
     def test_update_profile_response_schema_after_patch(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {
             'description': 'updated desc',
         }
@@ -112,7 +112,7 @@ class ProfileHappyPathTests(APITestCase):
         self.assertEqual(response.data['tel'], "")
 
     def test_update_profile_same_email_ok(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {'email': self.user.email}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -141,7 +141,7 @@ class ProfileHappyPathTests(APITestCase):
         self.assertNotIn('working_hours', response.data[0])
 
     def test_upload_file_sets_uploaded_at(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         upload = SimpleUploadedFile("avatar.jpg", b"file_content", content_type="image/jpeg")
 
         response = self.client.patch(url, {'file': upload}, format='multipart')
@@ -158,7 +158,7 @@ class ProfileHappyPathTests(APITestCase):
         self.user_profile.save()
         before = self.user_profile.uploaded_at
 
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         response = self.client.patch(url, {'description': 'no file changed'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -168,7 +168,7 @@ class ProfileHappyPathTests(APITestCase):
 
     def test_reupload_file_updates_uploaded_at(self):
         first_upload = SimpleUploadedFile("first.jpg", b"aaa", content_type="image/jpeg")
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         self.client.patch(url, {'file': first_upload}, format='multipart')
         self.user_profile.refresh_from_db()
         first_time = self.user_profile.uploaded_at
@@ -190,7 +190,7 @@ class ProfileHappyPathTests(APITestCase):
         self.user_profile.uploaded_at = timezone.now()
         self.user_profile.save()
 
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         response = self.client.patch(url, {'file': ''}, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -224,7 +224,7 @@ class ProfileValidationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_profile_invalid_email(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {
             'email': 'testuserexample.com'
         }
@@ -241,7 +241,7 @@ class ProfileValidationTests(APITestCase):
         )
         other_user_profile = Profile.objects.create(user=other_user, type='customer')
 
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {
             'email': 'otheruser@example.com'
         }
@@ -256,7 +256,7 @@ class ProfileValidationTests(APITestCase):
         original_username = self.user.username
         original_user_id = self.user.id
 
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {
             'type': 'business',
             'created_at': '2023-01-01T00:00:00',
@@ -280,7 +280,7 @@ class ProfileValidationTests(APITestCase):
         )
         Profile.objects.create(user=other, type='customer')
 
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         data = {'email': 'otheruser@example.com'}
 
         response = self.client.patch(url, data)
@@ -300,12 +300,12 @@ class ProfilePermissionTests(APITestCase):
         cls.user_profile = Profile.objects.create(user=cls.user, type='customer')
 
     def test_unauthenticated_user_get_profile(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_unauthenticated_user_update_profile(self):
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         response = self.client.patch(url, data={'first_name': 'updatedfirstname'})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -317,7 +317,7 @@ class ProfilePermissionTests(APITestCase):
         )
         other_user_profile = Profile.objects.create(user=other_user, type='customer')
         self.client.force_authenticate(user=other_user)
-        url = reverse('profile-detail', kwargs={'pk': self.user_profile.id})
+        url = reverse('profile-detail', kwargs={'pk': self.user_profile.user_id})
         response = self.client.patch(url, data={'first_name': 'hacker'})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
