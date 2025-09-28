@@ -154,6 +154,22 @@ class OfferValidationTests(APITestCase):
         resp = self.client.patch(patch_url, {"title": "New Title"}, format="json")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_patch_400_missing_offer_type_in_detail(self):
+        # Create an offer first
+        post_resp = self.client.post(self.list_url, self._payload(), format="json")
+        self.assertEqual(post_resp.status_code, status.HTTP_201_CREATED)
+        offer_id = post_resp.data["id"]
+        detail_id = post_resp.data["details"][0]["id"]
+        patch_url = reverse("offer-detail", args=[offer_id])
+
+        # Patch with a detail that is missing the required offer_type field
+        new_details = [
+            {"id": detail_id, "title": "Basic Updated", "revisions": 2,
+             "delivery_time_in_days": 4, "price": 60, "features": ["A", "X"]}
+        ]
+        resp = self.client.patch(patch_url, {"details": new_details}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
 
     # --- DELETE Validations ---
 

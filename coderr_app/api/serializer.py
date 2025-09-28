@@ -76,6 +76,12 @@ class OfferSerializer(serializers.ModelSerializer):
             # On update, if details are provided ensure no duplicate types
             details = attrs.get('details')
             if details:
+                # Ensure each provided detail includes offer_type (required on patch too)
+                missing_offer_type = [d for d in details if 'offer_type' not in d]
+                if missing_offer_type:
+                    raise serializers.ValidationError(
+                        "Each detail must include 'offer_type'."
+                    )
                 types = [d.get('offer_type') for d in details]
                 if len(types) != len(set(types)):
                     raise serializers.ValidationError(
